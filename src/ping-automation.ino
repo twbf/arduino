@@ -6,7 +6,7 @@ Servo servoPing;
 
 const int pingPin = 7;
 
-float dist;
+float scan[18], dist, tmp;
 
 void setup() {
   // initialize serial communication:
@@ -15,31 +15,41 @@ void setup() {
   servoRight.attach(12);
   servoLeft.attach(13);
   servoPing.attach(11);
+
+  for(int i=180; i>0; i-=10){
+      servoPing.write(angle);
+      dist = distance();
+      scan[(i/10)+1] = dist;
+  }
+
 }
 
 void loop() {
     for(int i=0; i<180; i+=10){
-        senseMove(i);
+        tmp = senseMove(i, scan);
+        scan[(i/10)+1] = tmp;
     }
     for(int i=180; i>0; i-=10){
-        senseMove(i);
+        tmp = senseMove(i, scan);
+        scan[(i/10)+1] = tmp;
     }
 }
 
-void senseMove(int angle){
+void senseMove(int angle, float scan[18]){
     servoPing.write(angle);
-    dist = distance();
+    scan[(angle/10)+1] = distance();
     if (dist <= 8) {
         slowDown(5);
         backward(500);
         turnLeft(1000);
     }
     else if (dist <= 12) {
-        forward(0, 50);
+        forward(0, 10);
     }
     else{
         forward(0, 200);
     }
+    return dist;
 }
 
 float distance(){
