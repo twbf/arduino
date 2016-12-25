@@ -2,8 +2,11 @@
 
 Servo servoRight;
 Servo servoLeft;
+Servo servoPing;
 
 const int pingPin = 7;
+
+float dist;
 
 void setup() {
   // initialize serial communication:
@@ -11,22 +14,38 @@ void setup() {
 
   servoRight.attach(12);
   servoLeft.attach(13);
+  servoPing.attach(11);
 }
 
 void loop() {
-  if (distance() < 8){
-      slowDown();
-      backward(500);
-      turnLeft(1000);
-  }
-  else{
-      forward(100);
-  }
+    for(int i=0; i<180; i+=10){
+        senseMove(i);
+    }
+    for(int i=180; i>0; i-=10){
+        senseMove(i);
+    }
+}
+
+void senseMove(int angle){
+    servoPing.write(angle);
+    dist = distance();
+    if (dist <= 8) {
+        slowDown(5);
+        backward(500);
+        turnLeft(1000);
+    }
+    else if (dist <= 12) {
+        forward(0, 50);
+    }
+    else{
+        forward(0, 200);
+    }
 }
 
 float distance(){
     long duration;
     float inches;
+    delay(20);
 
     // The PING))) is triggered by a HIGH pulse of 2 or more microseconds.
     // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
@@ -54,9 +73,9 @@ float microsecondsToInches(long microseconds) {
   return (float(microseconds) / 74) / 2;
 }
 
-void forward(int time){
-    servoLeft.writeMicroseconds(1700);
-    servoRight.writeMicroseconds(1300);
+void forward(int time, int speed){
+    servoLeft.writeMicroseconds(1500+speed);
+    servoRight.writeMicroseconds(1500-speed);
     delay(time);
 }
 
@@ -73,15 +92,17 @@ void turnRight(int time){
 }
 
 void backward(int time){
-    servoLeft.writeMicroseconds(1300);
-    servoRight.writeMicroseconds(1700);
-    delay(time);
+    for(int i=0; i<200; i+=10){
+        servoLeft.writeMicroseconds(1500-i);
+        servoRight.writeMicroseconds(1500+i);
+        delay(50);
+    }
 }
 
-void slowDown(){
-    for(int i=10; i>0; i--){
-        servoLeft.writeMicroseconds(1500+(distance()-3)*50);
-        servoRight.writeMicroseconds(1500-(distance()-3)*50);
-        delay(100);
+void slowDown(int howmuch){
+    for(int i=200; i>0; i-=10){
+        servoLeft.writeMicroseconds(1500+i);
+        servoRight.writeMicroseconds(1500-i);
+        delay(50);
     }
 }
