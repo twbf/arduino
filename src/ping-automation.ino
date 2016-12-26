@@ -16,40 +16,42 @@ void setup() {
   servoLeft.attach(13);
   servoPing.attach(11);
 
-  for(int i=180; i>0; i-=10){
-      servoPing.write(angle);
-      dist = distance();
-      scan[(i/10)+1] = dist;
+  for(int i=0; i<18; i++){
+      scan[i] = float(122);
   }
 
 }
 
 void loop() {
     for(int i=0; i<180; i+=10){
-        tmp = senseMove(i, scan);
-        scan[(i/10)+1] = tmp;
+        senseMove(i);
     }
     for(int i=180; i>0; i-=10){
-        tmp = senseMove(i, scan);
-        scan[(i/10)+1] = tmp;
+        senseMove(i);
     }
 }
 
-void senseMove(int angle, float scan[18]){
+void senseMove(int angle){
     servoPing.write(angle);
     scan[(angle/10)+1] = distance();
-    if (dist <= 8) {
+    dist = minDist();
+    Serial.print(dist);
+    Serial.println();
+    if (dist <= 4) {
         slowDown(5);
-        backward(500);
-        turnLeft(1000);
+        backward(1000);
+        turnLeft(2000);
+        for(int i=0; i<180; i+=10){
+            servoPing.write(i);
+            scan[(i/10)+1] = distance();
+        }
     }
     else if (dist <= 12) {
-        forward(0, 10);
+        forward(10, 200);
     }
     else{
-        forward(0, 200);
+        forward(10, 200);
     }
-    return dist;
 }
 
 float distance(){
@@ -115,4 +117,14 @@ void slowDown(int howmuch){
         servoRight.writeMicroseconds(1500-i);
         delay(50);
     }
+}
+
+float minDist(){
+    float min = 122;
+    for(int i = 0; i < 18; i++){
+        if (scan[i] <= min){
+            min = scan[i];
+        }
+    }
+    return min;
 }
