@@ -8,6 +8,8 @@ const int pingPin = 7;
 
 float scan[18], dist, tmp;
 
+int direct;
+
 void setup() {
   // initialize serial communication:
   Serial.begin(9600);
@@ -40,17 +42,22 @@ void senseMove(int angle){
     if (dist <= 4) {
         slowDown(5);
         backward(1000);
-        turnLeft(2000);
+        if (direct<=90){
+            turnLeft(500+(direct*150));
+        }
+        else{
+            turnRight(500+(direct*150));
+        }
         for(int i=0; i<180; i+=10){
             servoPing.write(i);
             scan[(i/10)+1] = distance();
         }
     }
     else if (dist <= 12) {
-        forward(10, 200);
+        forward(50, 200);
     }
     else{
-        forward(10, 200);
+        forward(50, 200);
     }
 }
 
@@ -107,7 +114,7 @@ void backward(int time){
     for(int i=0; i<200; i+=10){
         servoLeft.writeMicroseconds(1500-i);
         servoRight.writeMicroseconds(1500+i);
-        delay(50);
+        delay(100);
     }
 }
 
@@ -124,6 +131,7 @@ float minDist(){
     for(int i = 0; i < 18; i++){
         if (scan[i] <= min){
             min = scan[i];
+            direct = i*10;
         }
     }
     return min;
