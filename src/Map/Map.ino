@@ -1,8 +1,22 @@
 #include "MeMCore.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
 MeUltrasonicSensor ultraSensor(3);
 MeDCMotor motor_9(9);
 MeDCMotor motor_10(10);
+
+int mode;
+int time;
+int speed;
+int last_checked = 0;
+int dist;
+int count = 0;
+int ran;
+int obstacle = 0;
+
+int delayCheck = 1;
 
 void move(int direction, int speed) {
       int leftSpeed = 0;
@@ -24,19 +38,89 @@ void move(int direction, int speed) {
       motor_10.run((10)==M1?-(rightSpeed):(rightSpeed));
 }
 
+int now(){
+    return millis();
+}
+
+void stop(){
+    move(1, 0);
+}
+
+void forward(){
+    mode = 1;
+    move(mode,speed);
+    time = now();
+}
+
+void backward(){
+    mode = 2;
+    move(mode,speed);
+    time = now();
+}
+
+void left(){
+    mode = 3;
+    move(mode,speed);
+    time = now();
+}
+
+void right(){
+    mode = 4;
+    move(mode,speed);
+    time = now();
+}
+
+double distance(){
+    double distance = sqrt(pow(ultraSensor.distanceCm(),2)-9);
+    //delay(100); // see what happens
+    return distance;
+}
+
 void setup(){
-  Serial.begin(9600);
+    Serial.print("START");
+    speed = 100;
+    last_checked = 0;
+    Serial.begin(9600);
 }
 
 void loop(){
-  if (ultraSensor.distanceCm()<10){
-      move(3,100);
-  } else {
-      move(1,100);
-  }
-  Serial.print(ultraSensor.distanceCm() );
-  Serial.println(" cm");
-  delay(100); /* the minimal measure interval is 100 milliseconds */
+    if ((last_checked - now()) > delayCheck){
+        last_checked = now();
+        dist = distance();
+        if (dist<15){
+            Serial.print("OBSTACLE - distance: ");
+            Serial.print(dist);
+            Serial.print(", count: ");
+            Serial.println(count);
+            //delayCheck = 100;
+            obstacle = 1;
+            if (count == 0){
+                ran = rand() % 2 + 1;
+            }
+            pickADirection();
+            count++;
+        } else {
+            if (obstacle == 1){
+                //delayCheck = 100;
+                pickADirection();
+                obstacle = 0;
+            } else {
+                //delayCheck = 100;
+            }
+            count = 0;
+            forward();
+        }
+    }
+}
+
+void pickADirection(){
+    if (ran == 1){
+        Serial.println("PICKED LEFT");
+        left();
+    } else { // 2
+        Serial.println("PICKED RIGHT");
+        right();
+    }
 }
 void map(){
     int foo [5];
@@ -55,8 +139,4 @@ void map(){
             done = false;
         }
     }
-}
-
-void forward(){
-
 }
