@@ -16,7 +16,7 @@ int count = 0;
 int ran;
 int obstacle = 0;
 
-int delayCheck = 1;
+int delayCheck = 100;
 
 void move(int direction, int speed) {
       int leftSpeed = 0;
@@ -84,7 +84,8 @@ void setup(){
 }
 
 void loop(){
-    if ((last_checked - now()) > delayCheck){
+    if ((now() - last_checked) > delayCheck){
+        //Serial.print(", count: ");
         last_checked = now();
         dist = distance();
         if (dist<15){
@@ -92,7 +93,7 @@ void loop(){
             Serial.print(dist);
             Serial.print(", count: ");
             Serial.println(count);
-            //delayCheck = 100;
+            delayCheck = 100;
             obstacle = 1;
             if (count == 0){
                 ran = rand() % 2 + 1;
@@ -101,11 +102,11 @@ void loop(){
             count++;
         } else {
             if (obstacle == 1){
-                //delayCheck = 100;
+                delayCheck = 500;
                 pickADirection();
                 obstacle = 0;
             } else {
-                //delayCheck = 100;
+                delayCheck = 100;
             }
             count = 0;
             forward();
