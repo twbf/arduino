@@ -1,25 +1,41 @@
+//Questions:
+//what is the keyword for flash memory?
+//
+//how to once you have avoided an obstacle come back to the original path? (needed in mapping)
+// A: Maybe store the net time left and right but one would also have to use
+//    the distance traveled to get back
+//    so, I think that we have to use vectors and think about distance rather than time
+//
+//What is the syntax for a byte array?
+//
+
+
 #include "MeMCore.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
+//objects used
 MeUltrasonicSensor ultraSensor(3);
 MeDCMotor motor_9(9);
 MeDCMotor motor_10(10);
 
-// for motor
+//motor fields
 int mode;
 int time;
 int speed;
 
+//timing fields
 int last_checked = 0;
+int delayCheck = 100;
+
+//maunuvering fields
 int dist;
 int count = 0;
 int ran;
 int obstacle = 0;
 
-int delayCheck = 100;
-
+//from MeMCore example set
 void move(int direction, int speed) {
       int leftSpeed = 0;
       int rightSpeed = 0;
@@ -41,7 +57,7 @@ void move(int direction, int speed) {
 }
 
 int now(){
-    return millis();
+    return millis(); //not sure what numbers this returns
 }
 
 void stop(){
@@ -73,8 +89,7 @@ void right(){
 }
 
 double distance(){
-    double distance = sqrt(pow(ultraSensor.distanceCm(),2)-9);
-    //delay(100); // see what happens
+    double distance = sqrt(pow(ultraSensor.distanceCm(),2)-9);  //corects for close distance error
     return distance;
 }
 
@@ -85,7 +100,10 @@ void setup(){
     Serial.begin(9600);
 }
 
-int lookAround(){  //left to right?
+
+//left to right distance scanning
+//Goal: store values in a array of distances to find obstacles
+int lookAround(){
     int foo [5];
     move(3,40);
     delay(50);
@@ -97,8 +115,8 @@ int lookAround(){  //left to right?
     move(3,40);
     delay(50);
 
-    //get minumum
-    int min = 400; //  it is set equal to maximum
+    //gets minumum
+    int min = 400; //it is set equal to maximum distance
     for(int i = 0; i<5; i++){
         if(foo[i]<min){
             min = foo[i];
@@ -116,19 +134,22 @@ void loop(){
             Serial.print(dist);
             Serial.print(", count: ");
             Serial.println(count);
+
             obstacle = 1;
             if (count == 0){
                 ran = rand() % 2 + 1;
             }
             pickADirection();
             count++;
-        } else {
+        } else { //no obstacle
             count = 0;
             forward();
         }
-    }  //  possibly else with delay such that it doesn't use too much processing power
+    }   //possibly "else" with delay such that it doesn't use too much processing
+        // or do math with the array map
 }
 
+//picks a direction based off of "ran" (random) variable
 void pickADirection(){
     if (ran == 1){
         Serial.println("PICKED LEFT");
