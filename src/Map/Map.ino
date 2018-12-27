@@ -85,7 +85,7 @@ void setup(){
     Serial.begin(9600);
 }
 
-int[] lookAround(){  //left to right?
+int lookAround(){  //left to right?
     int foo [5];
     move(3,40);
     delay(50);
@@ -96,19 +96,26 @@ int[] lookAround(){  //left to right?
     }
     move(3,40);
     delay(50);
-    return foo;
+
+    //get minumum
+    int min = 400; //  it is set equal to maximum
+    for(int i = 0; i<5; i++){
+        if(foo[i]<min){
+            min = foo[i];
+        }
+    }
+    return min;
 }
 
 void loop(){
     if ((now() - last_checked) > delayCheck){
         last_checked = now();
-        dist = distance();
-        if (dist<15){  // detected obstacle
+        dist = lookAround();
+        if (dist<10){  // detected obstacle
             Serial.print("OBSTACLE - distance: ");
             Serial.print(dist);
             Serial.print(", count: ");
             Serial.println(count);
-            delayCheck = 100;
             obstacle = 1;
             if (count == 0){
                 ran = rand() % 2 + 1;
@@ -116,13 +123,6 @@ void loop(){
             pickADirection();
             count++;
         } else {
-            if (obstacle == 1){ // last detected obstacle
-                delayCheck = 500;
-                pickADirection();
-                obstacle = 0;
-            } else { // reset delay check
-                delayCheck = 100;
-            }
             count = 0;
             forward();
         }
