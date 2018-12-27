@@ -7,9 +7,11 @@ MeUltrasonicSensor ultraSensor(3);
 MeDCMotor motor_9(9);
 MeDCMotor motor_10(10);
 
+// for motor
 int mode;
 int time;
 int speed;
+
 int last_checked = 0;
 int dist;
 int count = 0;
@@ -83,12 +85,25 @@ void setup(){
     Serial.begin(9600);
 }
 
+int[] lookAround(){  //left to right?
+    int foo [5];
+    move(3,40);
+    delay(50);
+    foo[0] = distance();
+    for(int i = 0; i<4; i++){
+        move(4,40);
+        foo[i+1] = distance();
+    }
+    move(3,40);
+    delay(50);
+    return foo;
+}
+
 void loop(){
     if ((now() - last_checked) > delayCheck){
-        //Serial.print(", count: ");
         last_checked = now();
         dist = distance();
-        if (dist<15){
+        if (dist<15){  // detected obstacle
             Serial.print("OBSTACLE - distance: ");
             Serial.print(dist);
             Serial.print(", count: ");
@@ -101,17 +116,17 @@ void loop(){
             pickADirection();
             count++;
         } else {
-            if (obstacle == 1){
+            if (obstacle == 1){ // last detected obstacle
                 delayCheck = 500;
                 pickADirection();
                 obstacle = 0;
-            } else {
+            } else { // reset delay check
                 delayCheck = 100;
             }
             count = 0;
             forward();
         }
-    }
+    }  //  possibly else with delay such that it doesn't use too much processing power
 }
 
 void pickADirection(){
@@ -121,23 +136,5 @@ void pickADirection(){
     } else { // 2
         Serial.println("PICKED RIGHT");
         right();
-    }
-}
-void map(){
-    int foo [5];
-    bool done = true;
-    while (done){
-        move(3,100);
-        move(3,100);
-        foo[0] = ultraSensor.distanceCm();
-        for(int i = 0; i<4; i++){
-            move(4,100);
-            foo[i+1] = ultraSensor.distanceCm();
-        }
-        move(3,100);
-        move(3,100);
-        if(true){ // it is mapped
-            done = false;
-        }
     }
 }
