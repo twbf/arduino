@@ -1,12 +1,23 @@
 //Questions:
 //what is the keyword for flash memory?
+// A: PROGMEM - https://www.arduino.cc/reference/en/language/variables/utilities/progmem/
+// ----- this is not going to be simple, but short of separately running a raspberry pi and offloading
+//       all large scale mapping to it (which would allow collabratively behaviour between multiple
+//       bots), i don't think there is much in the way of alternatives
+// ----- possible alternative: a dedicated higher end arduino (with 8KB of SRAM) only doing the mapping
+//       functions and communicating over the single wire bus
 //
 //how to once you have avoided an obstacle come back to the original path? (needed in mapping)
 // A: Maybe store the net time left and right but one would also have to use
 //    the distance traveled to get back
 //    so, I think that we have to use vectors and think about distance rather than time
+// ----- yes, I think that is essentially correct, store a "current intended direction is blah blah", and
+//       perhaps a "current adjusted direction to avoid obstacle at so and so is goo goo"
 //
 //What is the syntax for a byte array?
+// A: byte mapArray[32][32]; - https://forum.arduino.cc/index.php?topic=220385.0
+// ----- there does seem to be some complexities about this sometimes and there is no range checking,
+//       perhaps we should look for helpful libraries?
 //
 
 
@@ -52,12 +63,14 @@ void move(int direction, int speed) {
         	leftSpeed = speed;
         	rightSpeed = -speed;
       }
+      // Q: do you understand the below two lines yet? if not, I will rewrite them in clearer syntax so you can follow
       motor_9.run((9)==M1?-(leftSpeed):(leftSpeed));
       motor_10.run((10)==M1?-(rightSpeed):(rightSpeed));
 }
 
 int now(){
     return millis(); //not sure what numbers this returns
+                     // A: the number of milliseconds since program start
 }
 
 void stop(){
@@ -90,6 +103,8 @@ void right(){
 
 double distance(){
     double distance = sqrt(pow(ultraSensor.distanceCm(),2)-9);  //corects for close distance error
+                                                                // ----- we still need to test this, and potentially
+                                                                //       filter out negatives and spurious values
     return distance;
 }
 
@@ -147,9 +162,16 @@ void loop(){
         }
     }   //possibly "else" with delay such that it doesn't use too much processing
         // or do math with the array map
+        // ----- this is an excellent concept, to go to the extreme end we could setup
+        //       a queue of processing tasks with time estimates for completion to
+        //       give us reasonably efficient use of the downtime whilst also
+        //       maintaining responsiveness in the rest of the loop, but we should
+        //       probably not jump straight to that level of insanity
 }
 
 //picks a direction based off of "ran" (random) variable
+// ----- there is something a little odd going on here with the way ran is used inside and outside
+//       the proc, we should be able to clean this up some
 void pickADirection(){
     if (ran == 1){
         Serial.println("PICKED LEFT");
