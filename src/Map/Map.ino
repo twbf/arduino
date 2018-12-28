@@ -40,10 +40,9 @@ int speed;
 int last_checked = 0;
 int delayCheck = 100;
 
-//maunuvering fields
-int dist;
-int count = 0;
-int ran;
+//navigation fields
+double current_x, current_y, intended_x, intended_y;
+double current_angle;  //in radians
 int obstacle = 0;
 
 //from MeMCore example set
@@ -69,8 +68,7 @@ void move(int direction, int speed) {
 }
 
 int now(){
-    return millis(); //not sure what numbers this returns
-                     // A: the number of milliseconds since program start
+    return millis(); //the number of milliseconds since program start
 }
 
 void stop(){
@@ -118,47 +116,66 @@ void setup(){
 
 //left to right distance scanning
 //Goal: store values in a array of distances to find obstacles
-int lookAround(){
-    int foo [5];
+int[] lookAround(){
+    int scan [5];
     move(3,40);
     delay(50);
-    foo[0] = distance();
+    scan[0] = distance();
     for(int i = 0; i<4; i++){
         move(4,40);
-        foo[i+1] = distance();
+        scan[i+1] = distance();
     }
     move(3,40);
     delay(50);
-
-    //gets minumum
-    int min = 400; //it is set equal to maximum distance
-    for(int i = 0; i<5; i++){
-        if(foo[i]<min){
-            min = foo[i];
-        }
-    }
-    return min;
+    return scan;
 }
 
 void loop(){
     if ((now() - last_checked) > delayCheck){
+        //if current(x,y) == intended(x,y)
+        //update intended(x/y) by some algoriethm
         last_checked = now();
-        dist = lookAround();
-        if (dist<10){  // detected obstacle
+
+        //scan
+        int scan [5] = lookAround();
+
+        // get minimum distance from scan
+        int minDist = 400; //it is set equal to maximum distance
+        for(int i = 0; i<5; i++){
+            if(scan[i]<minDist){
+                minDist = scan[i];
+            }
+        }
+
+        if (minDist<10){  // detected obstacle
+
+            //printing to serial
             Serial.print("OBSTACLE - distance: ");
             Serial.print(dist);
             Serial.print(", count: ");
             Serial.println(count);
 
+            //manuver around obstacle with preference for going twords intended(x,y)
             obstacle = 1;
-            if (count == 0){
-                ran = rand() % 2 + 1;
+            //decide which directing to turn based on obstacle thats further away in that direction
+            if((scan[0]+scan[1])<(scan[3]+scan[4])){ //left?
+                left();
+                current_angle -= 0.3; //subtracts n radians
+            } else { //right?
+                right();
+                current_angle += 0.3; //adds n radians
             }
-            pickADirection();
-            count++;
-        } else { //no obstacle
+
+        } else { //no obstacle - eventually navagate twords intended (x,y)
+            obstacle = 0;
+
             count = 0;
             forward();
+
+            //update current(x,y)
+            //4 here is completly abatrary distance
+            current_x += 4 * cos(current_angle);
+            current_y += 4 * sin(current_angle);
         }
     }   //possibly "else" with delay such that it doesn't use too much processing
         // or do math with the array map
