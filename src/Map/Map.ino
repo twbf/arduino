@@ -33,9 +33,9 @@
 #include <math.h>
 
 //objects used
-MeUltrasonicSensor ultraSensor(3);
-MeDCMotor motor_9(9);
-MeDCMotor motor_10(10);
+MeUltrasonicSensor ultraSensor(3); //Object used from MeMCore
+MeDCMotor motor_9(9); //Objects used from MeMCore
+MeDCMotor motor_10(10); 
 
 //motor fields
 int mode;
@@ -209,5 +209,5 @@ void loop(){
         //       a queue of processing tasks with time estimates for completion to
         //       give us reasonably efficient use of the downtime whilst also
         //       maintaining responsiveness in the rest of the loop, but we should
-        //       probably not jump straight to that level of insanity
+        //       probably not jump straight to that level of insanity <--KB guesses this is JS talking
 }
