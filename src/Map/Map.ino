@@ -24,17 +24,15 @@
 //       perhaps we should look for helpful libraries?
 //
 
-//we will need
 
-
-#include "MeMCore.h"
+#include "MeMCore.h"  //MeUltrasonicSensor, MeDCMotor
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
-//objects used
-MeUltrasonicSensor ultraSensor(3); //Object used from MeMCore
-MeDCMotor motor_9(9); //Objects used from MeMCore
+//objects used - from MeMCore
+MeUltrasonicSensor ultraSensor(3);
+MeDCMotor motor_9(9);
 MeDCMotor motor_10(10);
 
 //motor fields
@@ -44,12 +42,13 @@ int speed;
 
 //timing fields
 int last_checked = 0;
-int delayCheck = 100;
-double time_to_distance = 0.001; //for each milisecond forward at 100 speed what is the distance
-double time_to_angle = 0.001; //for each milisecond turing at 100 speed what is the sngle change
+int delayCheck = 200;
+double time_to_distance = 0.02; //for each milisecond forward at 100 speed what is the distance
+double time_to_angle = 0.003; //for each milisecond turing at 100 speed what is the angle change
+                              //in radians
 
 //navigation fields
-double current_x, current_y, intended_x, intended_y;
+double current_x = 0, current_y = 0, intended_x = 100, intended_y = 100;  //just for now
 double current_angle, intended_angle;  //in radians
 int obstacle = 0;
 
@@ -70,7 +69,6 @@ void move(int direction, int speed) {
         	leftSpeed = speed;
         	rightSpeed = -speed;
       }
-      // Q: do you understand the below two lines yet? if not, I will rewrite them in clearer syntax so you can follow
       motor_9.run((9)==M1?-(leftSpeed):(leftSpeed));
       motor_10.run((10)==M1?-(rightSpeed):(rightSpeed));
 }
@@ -128,17 +126,18 @@ void setup(){
 
 //left to right distance scanning
 //Goal: store values in a array of distances to find obstacles
-int[] lookAround(){
+int[] lookAround(){ // currently not asychronous
     int scan [5];
     move(3,40);
-    delay(50);
+    delay(200);
     scan[0] = distance();
     for(int i = 0; i<4; i++){
         move(4,40);
+        delay(100);
         scan[i+1] = distance();
     }
     move(3,40);
-    delay(50);
+    delay(200);
     return scan;
 }
 
@@ -157,11 +156,12 @@ void loop(){
         current_angle -= time_to_angle * time_elapsed;
     } else if(mode == 4){ //right??
         current_angle += time_to_angle * time_elapsed;
-    } //mode = 0 not moving
+    } //mode == 0 not moving
 
     if (time_elapsed > delayCheck){
         //if current(x,y) == intended(x,y)
-        //update intended(x/y) by some algoriethm
+            //update intended(x/y) by some algoriethm
+
         last_checked = now();
 
         //scan
@@ -186,8 +186,8 @@ void loop(){
             //eventually put obstacle in map
             obstacle = 1;
 
-            //manuver around obstacle with preference for going twords intended(x,y)
             //decide which directing to turn based on obstacle thats further away in that direction
+            //might have to change delayCheck if each time it is going too far or not enough left or right
             if((scan[0]+scan[1])<(scan[3]+scan[4])){ //left?
                 left();
             } else { //right?
