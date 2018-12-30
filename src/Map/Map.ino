@@ -35,7 +35,7 @@
 //objects used
 MeUltrasonicSensor ultraSensor(3); //Object used from MeMCore
 MeDCMotor motor_9(9); //Objects used from MeMCore
-MeDCMotor motor_10(10); 
+MeDCMotor motor_10(10);
 
 //motor fields
 int mode;
@@ -111,7 +111,11 @@ double distance(){
     double distance = sqrt(pow(ultraSensor.distanceCm(),2)-9);  //corects for close distance error
                                                                 // ----- we still need to test this, and potentially
                                                                 //       filter out negatives and spurious values
-    return distance;
+    if(distance>0){
+        return distance;
+    } else {
+        return 0.001;
+    }
 }
 
 void setup(){
