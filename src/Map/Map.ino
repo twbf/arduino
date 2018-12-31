@@ -116,13 +116,6 @@ double distance(){
     }
 }
 
-void setup(){
-    Serial.print("START");
-    speed = 100;
-    last_checked = 0;
-    Serial.begin(9600);
-}
-
 
 //left to right distance scanning
 //Goal: store values in a array of distances to find obstacles
@@ -139,6 +132,31 @@ int[] lookAround(){ // currently not asychronous
     move(3,40);
     delay(200);
     return scan;
+}
+
+void uploadToCloud(int[] scan){
+    //send scan[] or a list of the obstcles (ones under 10 cm) to map_data.php
+    //sending scan[] will mean that more of the processing power is on the sever
+
+    //Then when it comes time to update intended location the script can update it
+    //     - this would mean all array math would be done in the cloud
+
+    //Thomas probably can figure out how to make the php script work but not how to get server space
+    //and thus ip/mac adresses to use. A couple years ago I set up a sever on my laptop but that
+    //isn't going to work this time
+
+    //is php or python the right route to go? We need a server side language. Python is maybe
+    //better because it has better syntax and can do matrix math better and in the future any
+    //machine learning is impossible to do in php. 
+    //  - for python I have found "Django" a high level library that will make comunicating
+    //    simpler, assuming a wifi module will work
+}
+
+void setup(){
+    Serial.print("START");
+    speed = 100;
+    last_checked = 0;
+    Serial.begin(9600);
 }
 
 void loop(){
@@ -206,6 +224,9 @@ void loop(){
                 forward();
             }
             count = 0;
+        }
+        if(false){ // so it doesn't actually do it
+            uploadToCloud(scan);
         }
     }   //possibly "else" with delay such that it doesn't use too much processing
         // or do math with the array map
