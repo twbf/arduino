@@ -41,8 +41,9 @@ int time;
 int speed;
 
 //timing fields
+int count = 0;
 int last_checked = 0;
-int delayCheck = 200;
+int delayCheck = 1500;
 double time_to_distance = 0.02; //for each milisecond forward at 100 speed what is the distance
 double time_to_angle = 0.003; //for each milisecond turing at 100 speed what is the angle change
                               //in radians
@@ -51,6 +52,7 @@ double time_to_angle = 0.003; //for each milisecond turing at 100 speed what is 
 double current_x = 0, current_y = 0, intended_x = 100, intended_y = 100;  //just for now
 double current_angle, intended_angle;  //in radians
 int obstacle = 0;
+int scan[5];
 
 //from MeMCore example set
 void move(int direction, int speed) {
@@ -82,13 +84,13 @@ void stop(){
 }
 
 void forward(){
-    mode = 1;
+    mode = 2;
     move(mode,speed);
     time = now();
 }
 
 void backward(){
-    mode = 2;
+    mode = 1;
     move(mode,speed);
     time = now();
 }
@@ -119,22 +121,20 @@ double distance(){
 
 //left to right distance scanning
 //Goal: store values in a array of distances to find obstacles
-int[] lookAround(){ // currently not asychronous
-    int scan [5];
-    move(3,40);
-    delay(200);
+void lookAround(){ // currently not asychronous
+    move(3,60);
+    delay(300);
     scan[0] = distance();
     for(int i = 0; i<4; i++){
-        move(4,40);
-        delay(100);
+        move(4,60);
+        delay(150);
         scan[i+1] = distance();
     }
-    move(3,40);
-    delay(200);
-    return scan;
+    move(3,60);
+    delay(300);
 }
 
-void uploadToCloud(int[] scan){
+void uploadToCloud(int scan[]){
     //send scan[] or a list of the obstcles (ones under 10 cm) to map_data.php
     //sending scan[] will mean that more of the processing power is on the sever
 
@@ -147,7 +147,7 @@ void uploadToCloud(int[] scan){
 
     //is php or python the right route to go? We need a server side language. Python is maybe
     //better because it has better syntax and can do matrix math better and in the future any
-    //machine learning is impossible to do in php. 
+    //machine learning is impossible to do in php.
     //  - for python I have found "Django" a high level library that will make comunicating
     //    simpler, assuming a wifi module will work
 }
@@ -183,7 +183,7 @@ void loop(){
         last_checked = now();
 
         //scan
-        int scan [5] = lookAround();
+        lookAround(); //sets scan
 
         // get minimum distance from scan
         int minDist = 400; //it is set equal to maximum distance
@@ -197,7 +197,7 @@ void loop(){
 
             //printing to serial
             Serial.print("OBSTACLE - distance: ");
-            Serial.print(dist);
+            Serial.print(minDist);
             Serial.print(", count: ");
             Serial.println(count);
 
@@ -207,19 +207,19 @@ void loop(){
             //decide which directing to turn based on obstacle thats further away in that direction
             //might have to change delayCheck if each time it is going too far or not enough left or right
             if((scan[0]+scan[1])<(scan[3]+scan[4])){ //left?
-                left();
-            } else { //right?
                 right();
+            } else { //right?
+                left();
             }
 
         } else { //no obstacle - navagate twords intended (x,y)
             obstacle = 0;
 
             intended_angle = atan2(intended_y-current_y, intended_x-current_x); //gets the angle
-            if((current_angle-intended_angle)>.2){ //.2 is about 10 degrees  -- left??
-                left();
-            } else if((current_angle-intended_angle)<-.2){ // right??
-                right();
+            if((current_angle-intended_angle)>1){ //.2 is about 10 degrees  -- left??
+                forward();
+            } else if((current_angle-intended_angle)<-1){ // right??
+                forward();
             } else {
                 forward();
             }
