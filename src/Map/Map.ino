@@ -43,13 +43,13 @@ int speed;
 //timing fields
 int count = 0;
 int last_checked = 0;
-int delayCheck = 1500;
-double time_to_distance = 0.02; //for each milisecond forward at 100 speed what is the distance
-double time_to_angle = 0.003; //for each milisecond turing at 100 speed what is the angle change
+int delayCheck = 2000;
+double time_to_distance = 0.004; //for each milisecond forward at 100 speed what is the distance
+double time_to_angle = 0.0006; //for each milisecond turing at 100 speed what is the angle change
                               //in radians
 
 //navigation fields
-double current_x = 0, current_y = 0, intended_x = 100, intended_y = 100;  //just for now
+double current_x = 0, current_y = 0, intended_x = 20, intended_y = 0;  //just for now
 double current_angle, intended_angle;  //in radians
 int obstacle = 0;
 int scan[5];
@@ -123,7 +123,7 @@ double distance(){
 //Goal: store values in a array of distances to find obstacles
 void lookAround(){ // currently not asychronous
     move(3,60);
-    delay(300);
+    delay(325);
     scan[0] = distance();
     for(int i = 0; i<4; i++){
         move(4,60);
@@ -131,7 +131,7 @@ void lookAround(){ // currently not asychronous
         scan[i+1] = distance();
     }
     move(3,60);
-    delay(300);
+    delay(325);
 }
 
 void uploadToCloud(int scan[]){
@@ -180,8 +180,6 @@ void loop(){
         //if current(x,y) == intended(x,y)
             //update intended(x/y) by some algoriethm
 
-        last_checked = now();
-
         //scan
         lookAround(); //sets scan
 
@@ -193,7 +191,7 @@ void loop(){
             }
         }
 
-        if (minDist<10){  // detected obstacle
+        if (minDist<15){  // detected obstacle
 
             //printing to serial
             Serial.print("OBSTACLE - distance: ");
@@ -206,9 +204,11 @@ void loop(){
 
             //decide which directing to turn based on obstacle thats further away in that direction
             //might have to change delayCheck if each time it is going too far or not enough left or right
-            if((scan[0]+scan[1])<(scan[3]+scan[4])){ //left?
+            if((scan[0]+scan[1])<(scan[3]+scan[4])){ //right
+                delayCheck = 500;
                 right();
-            } else { //right?
+            } else { //left
+                delayCheck = 500;
                 left();
             }
 
@@ -216,11 +216,14 @@ void loop(){
             obstacle = 0;
 
             intended_angle = atan2(intended_y-current_y, intended_x-current_x); //gets the angle
-            if((current_angle-intended_angle)>1){ //.2 is about 10 degrees  -- left??
-                forward();
-            } else if((current_angle-intended_angle)<-1){ // right??
-                forward();
+            if((current_angle-intended_angle)>200){ //.2 is about 10 degrees  -- left??
+                delayCheck = 500;
+                left();
+            } else if((current_angle-intended_angle)<-200){ // right??
+                delayCheck = 500;
+                right();
             } else {
+                delayCheck = 1000;
                 forward();
             }
             count = 0;
@@ -228,6 +231,7 @@ void loop(){
         if(false){ // so it doesn't actually do it
             uploadToCloud(scan);
         }
+        last_checked = now();
     }   //possibly "else" with delay such that it doesn't use too much processing
         // or do math with the array map
         // ----- this is an excellent concept, to go to the extreme end we could setup
