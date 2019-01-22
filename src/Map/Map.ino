@@ -26,6 +26,9 @@
 
 
 #include "MeMCore.h"  //MeUltrasonicSensor, MeDCMotor
+#include <Arduino.h>
+#include <Wire.h>
+#include <SoftwareSerial.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -49,10 +52,11 @@ double time_to_angle = 0.0006; //for each milisecond turing at 100 speed what is
                               //in radians
 
 //navigation fields
-double current_x = 0, current_y = 0, intended_x = 20, intended_y = 0;  //just for now
+double current_x = 0, current_y = 0, intended_x = 100, intended_y = 0;  //just for now
 double current_angle, intended_angle;  //in radians
 int obstacle = 0;
 int scan[5];
+int bounce = 0;
 
 //from MeMCore example set
 void move(int direction, int speed) {
@@ -157,10 +161,11 @@ void setup(){
     speed = 100;
     last_checked = 0;
     Serial.begin(9600);
+    pinMode(A7,INPUT);
 }
 
-void loop(){
-
+void run(){
+while(true){ //goes forever
     //adjust position
     //doing this every time will allow us to see a constant pregression of position
     int time_elapsed = now() - last_checked;
@@ -171,7 +176,7 @@ void loop(){
         current_x -= time_to_distance * time_elapsed * cos(current_angle);
         current_y -= time_to_distance * time_elapsed * sin(current_angle);
     } else if(mode == 3){  //left??
-        current_angle -= time_to_angle * time_elapsed;
+        current_angle -=time_to_angle * time_elapsed; 
     } else if(mode == 4){ //right??
         current_angle += time_to_angle * time_elapsed;
     } //mode == 0 not moving
@@ -205,10 +210,12 @@ void loop(){
             //decide which directing to turn based on obstacle thats further away in that direction
             //might have to change delayCheck if each time it is going too far or not enough left or right
             if((scan[0]+scan[1])<(scan[3]+scan[4])){ //right
-                delayCheck = 500;
+                delayCheck = 400;
+                bounce++;
                 right();
             } else { //left
-                delayCheck = 500;
+                delayCheck = 400;
+                bounce++;
                 left();
             }
 
@@ -216,14 +223,15 @@ void loop(){
             obstacle = 0;
 
             intended_angle = atan2(intended_y-current_y, intended_x-current_x); //gets the angle
-            if((current_angle-intended_angle)>200){ //.2 is about 10 degrees  -- left??
-                delayCheck = 500;
+            if((current_angle-intended_angle)>200 && bounce == 0){ //.2 is about 10 degrees  -- left??
+                delayCheck = 400;
                 left();
-            } else if((current_angle-intended_angle)<-200){ // right??
-                delayCheck = 500;
+            } else if((current_angle-intended_angle)<-200 && bounce == 0){ // right??
+                delayCheck = 400;
                 right();
             } else {
-                delayCheck = 1000;
+                delayCheck = 700;
+                bounce = 0;
                 forward();
             }
             count = 0;
@@ -239,4 +247,12 @@ void loop(){
         //       give us reasonably efficient use of the downtime whilst also
         //       maintaining responsiveness in the rest of the loop, but we should
         //       probably not jump straight to that level of insanity <--KB guesses this is JS talking
+}
+}
+
+void loop(){
+    if((0^(analogRead(A7)>10?0:1))){ //push to start
+        delay(500); //slight delay so everthing is smooth
+        run();
+    }
 }
