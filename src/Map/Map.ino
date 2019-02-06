@@ -47,15 +47,15 @@ int speed;
 int count = 0;
 int last_checked = 0;
 int delayCheck = 2000;
-double time_to_distance = 0.004; //for each milisecond forward at 100 speed what is the distance
-double time_to_angle = 0.0006; //for each milisecond turing at 100 speed what is the angle change
+double time_to_distance = 8/700; //for each milisecond forward at 100 speed what is the distance
+double time_to_angle = 1.2566/500; //for each milisecond turing at 100 speed what is the angle change
                               //in radians
 
 //navigation fields
 double current_x = 0, current_y = 0, intended_x = 100, intended_y = 0;  //just for now
 double current_angle, intended_angle;  //in radians
 int obstacle = 0;
-int scan[5];
+int scan[7];
 int bounce = 0;
 
 //from MeMCore example set
@@ -125,17 +125,19 @@ double distance(){
 
 //left to right distance scanning
 //Goal: store values in a array of distances to find obstacles
-void lookAround(){ // currently not asychronous
+//only goes up to 3 each side
+void lookAround(int eachside = 2, int displace = 150){ // currently not asychronous
     move(3,60);
-    delay(325);
+    delay(2*displace);
     scan[0] = distance();
-    for(int i = 0; i<4; i++){
+    for(int i = 0; i<eachside*2; i++){
         move(4,60);
-        delay(150);
+        delay(displace);
         scan[i+1] = distance();
     }
     move(3,60);
-    delay(325);
+    delay(2*displace);
+    stop();
 }
 
 void uploadToCloud(int scan[]){
@@ -156,6 +158,48 @@ void uploadToCloud(int scan[]){
     //    simpler, assuming a wifi module will work
 }
 
+
+void setVariables(){
+    //find right angle to wall
+    bool rightAngle = false;
+    while(!rightAngle){
+        lookAround(2, 100);
+        int leftAvg = (scan[0]+scan[1])/2;
+        int rightAvg = (scan[3]+scan[4])/2;
+        int mid = scan[2];
+        if(leftAvg>mid && rightAvg>mid){
+            rightAngle = true;
+        } else if (rightAvg<mid){
+            right();
+            delay(70);
+            stop();
+        } else if (leftAvg<mid){
+            left();
+            delay(70);
+            stop();
+        }
+    }
+    int firstDis = distance();
+
+    forward();
+    delay(800);
+
+    int secoundDis = distance();
+
+    time_to_distance = (firstDis-secoundDis)/800;
+
+    right();
+    delay(100);
+
+    int thrirdDis = distance();
+
+    time_to_angle = acos(thrirdDis/secoundDis) / 100;
+
+    left();
+    delay(100);
+    stop();
+}
+
 void setup(){
     Serial.print("START");
     speed = 100;
@@ -169,19 +213,19 @@ while(true){ //goes forever
     //adjust position
     //doing this every time will allow us to see a constant pregression of position
     int time_elapsed = now() - last_checked;
-    if(mode == 1){
-        current_x += time_to_distance * time_elapsed * cos(current_angle);
-        current_y += time_to_distance * time_elapsed * sin(current_angle);
-    } else if(mode == 2){
-        current_x -= time_to_distance * time_elapsed * cos(current_angle);
-        current_y -= time_to_distance * time_elapsed * sin(current_angle);
-    } else if(mode == 3){  //left??
-        current_angle -=time_to_angle * time_elapsed; 
-    } else if(mode == 4){ //right??
-        current_angle += time_to_angle * time_elapsed;
-    } //mode == 0 not moving
-
     if (time_elapsed > delayCheck){
+        if(mode == 1){
+            current_x += time_to_distance * time_elapsed * cos(current_angle);
+            current_y += time_to_distance * time_elapsed * sin(current_angle);
+        } else if(mode == 2){
+            current_x -= time_to_distance * time_elapsed * cos(current_angle);
+            current_y -= time_to_distance * time_elapsed * sin(current_angle);
+        } else if(mode == 3){  //left??
+            current_angle -=time_to_angle * time_elapsed;
+        } else if(mode == 4){ //right??
+            current_angle += time_to_angle * time_elapsed;
+        } //mode == 0 not moving
+
         //if current(x,y) == intended(x,y)
             //update intended(x/y) by some algoriethm
 
@@ -223,11 +267,11 @@ while(true){ //goes forever
             obstacle = 0;
 
             intended_angle = atan2(intended_y-current_y, intended_x-current_x); //gets the angle
-            if((current_angle-intended_angle)>200 && bounce == 0){ //.2 is about 10 degrees  -- left??
-                delayCheck = 400;
+            if((current_angle-intended_angle)>1 && bounce == 0){ //.2 is about 10 degrees  -- left??
+                delayCheck = (current_angle - intended_angle)/time_to_angle;
                 left();
-            } else if((current_angle-intended_angle)<-200 && bounce == 0){ // right??
-                delayCheck = 400;
+            } else if((current_angle-intended_angle)<-1 && bounce == 0){ // right??
+                delayCheck = (intended_angle - current_angle)/time_to_angle;
                 right();
             } else {
                 delayCheck = 700;
@@ -253,6 +297,7 @@ while(true){ //goes forever
 void loop(){
     if((0^(analogRead(A7)>10?0:1))){ //push to start
         delay(500); //slight delay so everthing is smooth
+        setVariables();
         run();
     }
 }
