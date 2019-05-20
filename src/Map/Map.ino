@@ -52,7 +52,7 @@ double time_to_angle = 1.2566/500; //for each milisecond turing at 100 speed wha
                               //in radians
 
 //navigation fields
-double current_x = 0, current_y = 0, intended_x = 100, intended_y = 0;  //just for now
+double current_x = 0, current_y = 0, intended_x = 1, intended_y = 0;  //just for now
 double current_angle, intended_angle;  //in radians
 int obstacle = 0;
 int scan[7];
@@ -128,15 +128,17 @@ double distance(){
 //only goes up to 3 each side
 void lookAround(int eachside = 2, int displace = 150){ // currently not asychronous
     move(3,60);
-    delay(2*displace);
+    delay(eachside*displace);
+    stop();
     scan[0] = distance();
     for(int i = 0; i<eachside*2; i++){
         move(4,60);
         delay(displace);
+        stop();
         scan[i+1] = distance();
     }
     move(3,60);
-    delay(2*displace);
+    delay(eachside*displace);
     stop();
 }
 
@@ -163,7 +165,7 @@ void setVariables(){
     //find right angle to wall
     bool rightAngle = false;
     while(!rightAngle){
-        lookAround(2, 100);
+        lookAround(2, 200);
         int leftAvg = (scan[0]+scan[1])/2;
         int rightAvg = (scan[3]+scan[4])/2;
         int mid = scan[2];
@@ -183,21 +185,26 @@ void setVariables(){
 
     forward();
     delay(800);
+    stop();
 
     int secoundDis = distance();
 
     time_to_distance = (firstDis-secoundDis)/800;
 
     right();
-    delay(100);
+    delay(300);
+    stop();
 
     int thrirdDis = distance();
 
-    time_to_angle = acos(thrirdDis/secoundDis) / 100;
+    time_to_angle = acos(secoundDis/thrirdDis) / 1000;
+
+    delay(500);
 
     left();
-    delay(100);
+    delay(300);
     stop();
+    delay(1000);
 }
 
 void setup(){
@@ -267,10 +274,10 @@ while(true){ //goes forever
             obstacle = 0;
 
             intended_angle = atan2(intended_y-current_y, intended_x-current_x); //gets the angle
-            if((current_angle-intended_angle)>1 && bounce == 0){ //.2 is about 10 degrees  -- left??
+            if((current_angle-intended_angle)>0.3 && bounce == 0){ //.2 is about 10 degrees  -- left??
                 delayCheck = (current_angle - intended_angle)/time_to_angle;
                 left();
-            } else if((current_angle-intended_angle)<-1 && bounce == 0){ // right??
+            } else if((current_angle-intended_angle)<-0.3 && bounce == 0){ // right??
                 delayCheck = (intended_angle - current_angle)/time_to_angle;
                 right();
             } else {
