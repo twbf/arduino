@@ -6,6 +6,15 @@
 #include <stdlib.h>
 #include <math.h>
 
+//Rundown by Thomas
+//Goal: to make a 360 degree scan of a room with the MeUltrasonicSensor to understand the data coming back from the sensor
+//Result: successful using a MacBook with python3. Thomas realized that the data coming back from the MeUltrasonicSensor
+//        weren't accurate and transformations won't fundamentally change this. Look at the graph (ex_rectangular_room.png) which was
+//        done on a rectangular room. Note that it isn't rectangular!
+//
+//This program is in two parts. Part 1 (scan.ino) completes the scan and prints out the numbers in the serial.
+//Part 2 (ploty.py) displays the data that you copied from the serial panel. Yes it is awkward.
+
 //objects used - from MeMCore
 MeUltrasonicSensor ultraSensor(3);
 MeDCMotor motor_9(9);
